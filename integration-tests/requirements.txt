@@ -1,0 +1,12 @@
+behave==1.*
+black
+draymed==1.*
+environs==4.*
+isort
+kombu==4.6.8
+mypy
+python-jose==3.*
+reportportal-behave-client==1.*
+requests==2.*
+types-requests==2.*
+wiremock==2.*

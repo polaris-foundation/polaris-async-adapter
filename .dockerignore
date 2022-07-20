@@ -1,0 +1,11 @@
+.circleci
+.common
+.mypy_cache
+.pytest_cache
+.tox
+coverage-reports
+integration-tests
+tests
+.coverage
+.python-version
+alive.txt

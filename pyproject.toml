@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "dhos-async-adapter"
+version = "0.0.1"
+description = "DHOS Async Adapter"
+authors = ["Jon Daly <jonathan.daly@sensynehealth.com>"]
+keywords = ["Async", "Kombu", "RabbitMQ"]
+repository = "https://github.com/draysontechnologies/dhos-async-adapter"
+
+[[tool.poetry.source]]
+name = "sensynehealth"
+url = "https://pypi.fury.io/sensynehealth/"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+draymed = "2.*"
+environs = "4.*"
+kombu-batteries-included = "1.*"
+marshmallow = "3.*"
+python-jose = "3.*"
+requests = "2.*"
+she-logging = "1.*"
+
+[tool.poetry.dev-dependencies]
+bandit = "*"
+black = "*"
+coloredlogs = "*"
+coverage = "*"
+isort = "*"
+mock = "*"
+mypy = "*"
+pytest = "*"
+pytest-dhos = "*"
+pytest-freezegun = "*"
+pytest-mock = "*"
+requests_mock = "1.8.*"
+safety = "*"
+tox = "*"
+types-mock = "*"
+types-requests = "*"

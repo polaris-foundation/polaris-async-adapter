@@ -1,0 +1,339 @@
+version: "3.7"
+x-healthcheck:
+  &FLASK_HEALTHCHECK
+  healthcheck:
+    test: curl -f http://localhost:5000/running || false
+    interval: 5s
+    retries: 40
+    start_period: 10s
+x-environment:
+  &COMMON_ENVIRONMENT
+  ENVIRONMENT: DEVELOPMENT
+  PROXY_URL: http://localhost
+  HS_ISSUER: http://localhost/
+  HS_KEY: secret
+  AUTH0_CLIENT_ID: "doesnotmatter"
+  AUTH0_AUDIENCE: "http://localhost/"
+  NONCUSTOM_AUTH0_DOMAIN: "https://integration-tests"
+  AUTH0_CUSTOM_DOMAIN: "dev"
+  AUTH0_HS_KEY: "secret"
+  DATABASE_HOST: postgres-db
+  DATABASE_PORT: 5432
+  DATABASE_USER: postgres-user
+  DATABASE_PASSWORD: postgres-password
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_USERNAME: guest
+  RABBITMQ_PASSWORD: guest
+  RABBITMQ_NOENCRYPT: "true"
+  REDIS_HOST: localhost
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: any
+  CUSTOMER_CODE: dev
+  LOG_LEVEL: DEBUG
+  LOG_FORMAT: COLOUR
+  POLARIS_API_KEY: inttestsecret
+  MOCK_TRUSTOMER_CONFIG: |
+    {
+      "gdm_config": {
+        "alerts_system": "counts",
+        "blood_glucose_units": "mmol/L",
+        "blood_glucose_thresholds_mmoll": {
+          "BEFORE-BREAKFAST": {"high": 5.3, "low": 4.0},
+          "OTHER": {"high": 7.8, "low": 4.0},
+          "BEFORE-LUNCH": {"high": 6.0, "low": 4.0},
+          "BEFORE-DINNER": {"high": 6.0, "low": 4.0}
+        },
+        "graph_thresholds_mmoll": {"high": 7.8, "low": 4.0},
+        "use_syne_predictions": false,
+        "article_tags": ["gdm-uk-default"],
+        "medication_tags": ["gdm-uk-default"]
+      }
+    }
+
+volumes:
+  app-volume:
+
+services:
+  dhos-async-adapter-integration-tests:
+    container_name: "dhos-async-adapter-integration-tests"
+    build:
+      context: ./
+      args:
+        - PIP_EXTRA_INDEX_URL
+    volumes:
+      - app-volume:/app/check
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      SYSTEM_JWT_SCOPE: >-
+        read:audit_event read:gdm_bg_reading_all read:gdm_sms read:gdm_message_all read:gdm_survey_all
+        read:send_clinician read:send_encounter read:send_entry_identifier
+        write:gdm_bg_reading write:send_encounter write:send_observation
+        read:send_location read:gdm_location read:gdm_location_all
+        write:send_location write:gdm_location write:gdm_location_all
+      MOCK_DEVICE_SCOPE: >-
+        read:send_entry_identifier
+        read:send_device
+        read:send_location
+      BEHAVE_ARGS: ${BEHAVE_ARGS:-}
+      REPORT_PORTAL_URL: ${REPORT_PORTAL_URL:-}
+      REPORT_PORTAL_TOKEN: ${REPORT_PORTAL_TOKEN:-}
+      REPORT_PORTAL_PROJECT: ${REPORT_PORTAL_PROJECT:-}
+      ENVIRONMENT: ${ENVIRONMENT:-}
+      RELEASE: ${RELEASE:-}
+    command: >
+      bash -c "until [ -f /app/check/alive.txt ]; do echo 'wait for async-adapter'; sleep 1; done
+      && behave --no-capture --no-logcapture ${BEHAVE_ARGS:-}"
+    depends_on:
+      "dhos-async-adapter":
+        condition: service_healthy
+      "rabbitmq":
+        condition: service_healthy
+      "wiremock":
+        condition: service_healthy
+
+  dhos-async-adapter:
+    container_name: "dhos-async-adapter"
+    build:
+      context: ..
+      args:
+        - GEMFURY_DOWNLOAD_KEY
+    volumes:
+      - app-volume:/app
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      PROXY_URL: http://localhost
+      SMS_DEFAULT_SENDER: GDm-Health
+      DEA_AUTH0_CLIENT_ID: something
+      DEA_AUTH0_CLIENT_SECRET: something
+      DEA_AUTH0_AUDIENCE: something
+      DEA_AUTH0_TOKEN_URL: http://wiremock:8080/dea-auth0/token
+      DEA_INGEST_API_URL: http://wiremock:8080/dea-ingest
+      DHOS_ACTIVATION_AUTH_API_URL: http://dhos-activation-auth-api:5000
+      DHOS_AGGREGATOR_API_URL: http://wiremock:8080/dhos-aggregator
+      DHOS_AUDIT_API_URL: http://dhos-audit-api:5000
+      DHOS_CONNECTOR_API_URL: http://wiremock:8080/dhos-connector
+      DHOS_ENCOUNTERS_API_URL: http://dhos-encounters-api:5000
+      DHOS_MESSAGES_API_URL: http://dhos-messages-api:5000
+      DHOS_NOTIFICATIONS_API_URL: http://dhos-notifications-api:5000
+      DHOS_OBSERVATIONS_API_URL: http://dhos-observations-api:5000
+      DHOS_PDF_API_URL: http://wiremock:8080/dhos-pdf
+      DHOS_QUESTIONS_API_URL: http://dhos-questions-api:5000
+      DHOS_LOCATIONS_API_URL: http://dhos-locations-api:5000
+      DHOS_SERVICES_API_URL: http://wiremock:8080/dhos-services
+      DHOS_USERS_API_URL: http://wiremock:8080/dhos-users
+      DHOS_SMS_API_URL: http://dhos-sms-api:5000
+      GDM_BG_READINGS_API_URL: http://gdm-bg-readings-api:5000
+    command: >-
+      bash -c "python -m dhos_async_adapter"
+    healthcheck:
+      test: ['CMD','true']
+      start_period: 10s
+    depends_on:
+      "dhos-activation-auth-api":
+        condition: service_healthy
+      "dhos-audit-api":
+        condition: service_healthy
+      "dhos-encounters-api":
+        condition: service_healthy
+      "dhos-locations-api":
+        condition: service_healthy
+      "dhos-messages-api":
+        condition: service_healthy
+      "dhos-observations-api":
+        condition: service_healthy
+      "dhos-questions-api":
+        condition: service_healthy
+      "dhos-sms-api":
+        condition: service_healthy
+      "gdm-bg-readings-api":
+        condition: service_healthy
+      "rabbitmq":
+        condition: service_healthy
+      "wiremock":
+        condition: service_healthy
+
+  dhos-activation-auth-api:
+    container_name: "dhos-activation-auth-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-activation-auth-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-activation-auth-api
+      EXTERNAL_URL: http://dhos-activation-auth-api.com:5000
+      DHOS_URL_API_HOST: http://dhos-url-api:5000
+    command: >
+      bash -c "flask db upgrade
+      && python -m dhos_activation_auth_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+      "rabbitmq":
+        condition: service_healthy
+
+  dhos-audit-api:
+    container_name: "dhos-audit-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-audit-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-audit-api
+    command: >
+      bash -c "flask db upgrade
+      && python -m dhos_audit_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+
+  dhos-encounters-api:
+    container_name: "dhos-encounters-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-encounters-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-encounters-api
+    command: >
+      bash -c "flask db upgrade
+      && python -m dhos_encounters_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+      "rabbitmq":
+        condition: service_healthy
+
+  dhos-locations-api:
+    container_name: "dhos-locations-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-locations-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-locations-api
+      EXTERNAL_URL: http://dhos-locations-api:5000
+      ALLOW_DROP_DATA: "True"
+    command: >-
+      bash -c "flask db upgrade
+      && python -m dhos_locations_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+    ports:
+      - "5001:5000"
+
+  dhos-messages-api:
+    container_name: "dhos-messages-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-messages-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-messages-api
+    command: >
+      bash -c "flask db upgrade
+      && python -m dhos_messages_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+      "rabbitmq":
+        condition: service_healthy
+
+  dhos-observations-api:
+    container_name: "dhos-observations-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-observations-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-observations-api
+    command: >
+      bash -c "flask db upgrade
+      && python -m dhos_observations_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+      "rabbitmq":
+        condition: service_healthy
+
+  dhos-questions-api:
+    container_name: "dhos-questions-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-questions-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-questions-api
+    command: >
+      bash -c "flask db upgrade
+      && python -m dhos_questions_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+
+  dhos-sms-api:
+    container_name: "dhos-sms-api"
+    image: sensynehealth.azurecr.io/dhos/dhos-sms-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: dhos-sms-api
+      TWILIO_CALL_BACK_URL: https://sensynehealth.com
+      COUNTRY_CODE: GB
+      TWILIO_ACCOUNT_SID: something
+      TWILIO_AUTH_TOKEN: something
+      TWILIO_DISABLED: "true"
+    command: >
+      bash -c "flask db upgrade
+      && python -m dhos_sms_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+
+  gdm-bg-readings-api:
+    container_name: "gdm-bg-readings-api"
+    image: sensynehealth.azurecr.io/gdm/gdm-bg-readings-api:dev
+    environment:
+      <<: *COMMON_ENVIRONMENT
+      DATABASE_NAME: gdm-bg-readings-api
+      DHOS_TRUSTOMER_API_HOST: http://wiremock:8080/dhos-trustomer
+      SERVER_TIMEZONE: Europe/London
+    command: >
+      bash -c "flask db upgrade
+      && python -m gdm_bg_readings_api"
+    <<: *FLASK_HEALTHCHECK
+    depends_on:
+      "postgres-db":
+        condition: service_healthy
+      "rabbitmq":
+        condition: service_healthy
+
+  postgres-db:
+    container_name: "postgres-db"
+    build:
+      context: ./postgres-db
+    environment:
+      - POSTGRES_USER=postgres-user
+      - POSTGRES_PASSWORD=postgres-password
+      - POSTGRES_MULTIPLE_DATABASES="dhos-activation-auth-api","dhos-audit-api","dhos-encounters-api","dhos-locations-api","dhos-questions-api","dhos-messages-api","dhos-observations-api","dhos-sms-api","gdm-bg-readings-api"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    container_name: "rabbitmq"
+    image: docker.io/rabbitmq:3-management-alpine
+    ports:
+      - "15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  wiremock:
+    container_name: "wiremock"
+    image: wiremock/wiremock:2.32.0
+    command: ["--local-response-templating"]
+    healthcheck:
+      test: "curl --location --request POST 'http://localhost:8080/__admin/mappings' || false"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
