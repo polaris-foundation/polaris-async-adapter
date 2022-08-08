@@ -13,7 +13,6 @@ from dhos_async_adapter.callbacks import (
     encounter_update,
     export_gdm_syne_bg_readings,
     generate_send_pdf,
-    generate_ward_reports,
     patient_update,
     update_activation_auth_clinician,
 )
@@ -29,7 +28,6 @@ ROUTING_TABLE: Dict[str, Dict[str, Callable]] = {
     },
     "dhos-aggregator-adapter-task-queue": {
         generate_send_pdf.ROUTING_KEY: generate_send_pdf.process,
-        generate_ward_reports.ROUTING_KEY: generate_ward_reports.process,
     },
     "dhos-audit-adapter-task-queue": {audit_event.ROUTING_KEY: audit_event.process},
     "dhos-connector-adapter-task-queue": {

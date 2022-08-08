@@ -43,7 +43,6 @@ The service consumes the following messages:
 | dhos.D9000001        | dhos-activation-auth-adapter-task-queue | [Create Activation Auth clinician](#create-activation-auth-clinician)   |
 | dhos.D9000002        | dhos-activation-auth-adapter-task-queue | [Update Activation Auth clinician](#update-activation-auth-clinician)   |
 | dhos.DM000007        | dhos-aggregator-adapter-task-queue      | [Generate SEND PDF](#generate-send-pdf)                                 |
-| dhos.DM000010        | dhos-aggregator-adapter-task-queue      | [Generate ward reports](#generate-ward-reports)                         |
 | dhos.34837004        | dhos-audit-adapter-task-queue           | [Audit event](#audit-event)                                             |
 | dhos.423779001       | dhos-connector-adapter-task-queue       | [Begin HL7 CDA processing](#begin-hl7-cda-processing)                   |
 | dhos.DM000015        | dhos-dea-export-adapter-task-queue      | [Export GDM SYNE BG readings](#export-gdm-syne-bg-readings)             |
@@ -86,18 +85,6 @@ The service consumes the following messages:
   - _GET /dhos-observations/dhos/v2/observation_set_
   - _POST /dhos-users/dhos/v1/clinician_list_
   - _POST /dhos-pdf/dhos/v1/send_pdf_
-
-### Generate ward reports
-
-- **Summary**: Generate SEND ward reports PDFs for each location
-- **Routing Key**: dhos.DM000010
-- **Body**: Object containing a start date and an end date.
-- **Notes**: Generates ward report PDFs and also exports to DEA.
-- **Endpoint(s)**:
-  - _GET /dhos-locations/dhos/v1/location/search_
-  - _GET /dhos-aggregator/dhos/v1/send_ward_report_data_
-  - _POST /dhos-pdf/dhos/v1/ward_report_
-  - _POST /dea/ingest/v2/dhos_data (external)_
 
 ### Audit event
 

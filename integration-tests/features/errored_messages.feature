@@ -21,7 +21,6 @@ Feature: Errored messages
       | dhos.DM000004        |
       | dhos.DM000005        |
       | dhos.DM000007        |
-      | dhos.DM000010        |
       | dhos.DM000015        |
       | gdm.166922008        |
       | dhos.24891000000101  |
