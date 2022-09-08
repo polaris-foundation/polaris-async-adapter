@@ -9,7 +9,7 @@ repository = "https://github.com/polaris-foundation/dhos-async-adapter"
 [tool.poetry.dependencies]
 python = "^3.9"
 draymed = "2.*"
-environs = "4.*"
+environs = "9.*"
 kombu-batteries-included = "1.*"
 marshmallow = "3.*"
 python-jose = "3.*"
