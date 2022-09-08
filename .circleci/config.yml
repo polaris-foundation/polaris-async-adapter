@@ -72,6 +72,7 @@ workflows:
           context: polaris-foundation
           requires:
             - test
+            - integration-test
           filters:
             branches:
               only:
