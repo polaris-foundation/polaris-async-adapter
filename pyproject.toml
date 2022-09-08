@@ -1,14 +1,10 @@
 [tool.poetry]
 name = "dhos-async-adapter"
 version = "0.0.1"
-description = "DHOS Async Adapter"
+description = "Polaris Async Adapter"
 authors = ["Jon Daly <jonathan.daly@sensynehealth.com>"]
 keywords = ["Async", "Kombu", "RabbitMQ"]
-repository = "https://github.com/draysontechnologies/dhos-async-adapter"
-
-[[tool.poetry.source]]
-name = "sensynehealth"
-url = "https://pypi.fury.io/sensynehealth/"
+repository = "https://github.com/polaris-foundation/dhos-async-adapter"
 
 [tool.poetry.dependencies]
 python = "^3.9"

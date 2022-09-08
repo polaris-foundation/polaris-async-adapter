@@ -4,14 +4,6 @@ set -eux
 
 cd integration-tests
 
-# Enable ReportPortal integration if on the default branch
-if [ $CIRCLE_BRANCH == $DEFAULT_BRANCH ]; then
-  echo "Enabling reportportal integration"
-  export BEHAVE_ARGS="-D rp_enable=True -D step_based=True"
-  export ENVIRONMENT=dev
-  export RELEASE=$(git describe --tags | sed s/v//g)
-fi
-
 # Start the containers, backgrounded so we can do docker wait
 # Pre pulling the postgres image so wait-for-it doesn't time out
 docker-compose rm -f

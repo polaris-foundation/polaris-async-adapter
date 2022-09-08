@@ -58,8 +58,6 @@ services:
     container_name: "dhos-async-adapter-integration-tests"
     build:
       context: ./
-      args:
-        - PIP_EXTRA_INDEX_URL
     volumes:
       - app-volume:/app/check
     environment:
@@ -95,8 +93,6 @@ services:
     container_name: "dhos-async-adapter"
     build:
       context: ..
-      args:
-        - GEMFURY_DOWNLOAD_KEY
     volumes:
       - app-volume:/app
     environment:
