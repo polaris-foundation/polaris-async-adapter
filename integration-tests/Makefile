@@ -6,8 +6,6 @@ PROJECT_NAME ?= ${repo}
 python_version = 3.9.5
 VIRTUAL_ENV=${shell pyenv root}/versions/${python_version}/envs/${PROJECT_NAME}-integration-tests
 
-TEST_CONTAINER = ${PROJECT_NAME:-api=}-integration-tests
-
 lint:
 	black .
 	isort --profile black .
@@ -18,7 +16,7 @@ test-local: lint
 	docker-compose pull
 	docker-compose build
 	docker-compose up --no-start --force-recreate
-	docker-compose run ${TEST_CONTAINER}
+	docker-compose run dhos-async-adapter-integration-tests
 	docker-compose down
 
 pyenv:

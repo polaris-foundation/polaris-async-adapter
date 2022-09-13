@@ -3,7 +3,7 @@ name = "dhos-async-adapter"
 version = "0.0.1"
 description = "Polaris Async Adapter"
 authors = ["Jon Daly <jonathan.daly@sensynehealth.com>"]
-keywords = ["Async", "Kombu", "RabbitMQ"]
+keywords = ["Async", "Kombu", "RabbitMQ", "Polaris"]
 repository = "https://github.com/polaris-foundation/polaris-async-adapter"
 
 [tool.poetry.dependencies]
