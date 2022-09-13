@@ -20,6 +20,6 @@ test-local: lint
 	docker-compose down
 
 pyenv:
-	pyenv virtualenv ${python_version} ${VIRTUAL_ENV}
-	pyenv local ${VIRTUAL_ENV}
-	pip install -r requirements
+	pyenv virtualenv ${python_version} ${PROJECT_NAME}-integration-tests
+	pyenv local ${PROJECT_NAME}-integration-tests
+	pip install -r requirements.txt
