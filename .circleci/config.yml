@@ -1,23 +1,12 @@
-GCP_DOCKER_AUTH_MASTER: &GCP_DOCKER_AUTH
-  auth:
-    username: _json_key
-    password: ${GOOGLE_AUTH}
 version: 2.1
-orbs:
-  azure-acr: circleci/azure-acr@0.1.4
-  ms-teams: cloudradar-monitoring/ms-teams@0.0.1
 jobs:
   test:
     docker:
       - image: cimg/python:3.9
     steps:
       - checkout
-      - run:
-          name: Create coverage report dir
-          command: mkdir -p ${COVERAGE_REPORT_DIR}
       - run: |
           poetry self update
-          poetry config http-basic.sensynehealth ${GEMFURY_DOWNLOAD_KEY} ''
           pip install --upgrade tox
       - run:
           name: Set up tox tests
@@ -33,75 +22,58 @@ jobs:
           key: v1-poetry-deps-{{ checksum "poetry.lock" }}
           paths:
             - .tox
-      - persist_to_workspace:
-          root: coverage-reports
-          paths:
-            - coverage.xml
   integration-test:
     docker:
-      - image: gcr.io/dhos-stack/circleci-build-image:latest
-        <<: *GCP_DOCKER_AUTH
-    environment:
-      REPORT_PORTAL_PROJECT: platform
-      DEFAULT_BRANCH: trunk
+      - image: cimg/python:3.9
     steps:
       - checkout
       - setup_remote_docker:
-          docker_layer_caching: true
           version: 20.10.7
-      - run:
-          name: Auth with ACR
-          command: source /usr/local/bin/deployment-helpers-v1.sh; authenticateToACR
       - run:
           name: Run the integration test script
           command: .circleci/run_integration_tests.sh
   deploy-dev:
     docker:
-      - image: gcr.io/dhos-stack/circleci-build-image:latest
-        <<: *GCP_DOCKER_AUTH
-    environment:
-      K8S_DEV_DEPLOYMENT_NAME: deployment/dhos-async-adapter-dep
-      ACR_REPO_BASE: dhos
+      - image: cimg/python:3.9
     steps:
       - checkout
       - setup_remote_docker:
-          docker_layer_caching: true
+          version: 20.10.7
       - run:
           name: Add build information
           command: .circleci/record_build_info.sh
       - run:
-          name: Build image
-          command: docker build -t ${CIRCLE_PROJECT_REPONAME} . --build-arg GEMFURY_DOWNLOAD_KEY
+          name: Build docker image
+          command: docker build . -t polaris-async-adapter
       - run:
-          name: Push image to GCR
-          command: .circleci/push_gcr.sh
-      - azure-acr/build-and-push-image:
-          checkout: false
-          login-server-name: ${AZURE_LOGIN_SERVER_NAME}
-          registry-name: ${AZURE_REGISTRY_NAME}
-          repo: ${ACR_REPO_BASE}/dhos-async-adapter
-          tag: dev,cb-${CIRCLE_BUILD_NUM},$(git log --pretty=format:'%h' -n 1)
-          extra-build-args: --build-arg GEMFURY_DOWNLOAD_KEY
+          name: Tag docker image
+          command: |
+            docker tag polaris-async-adapter ghcr.io/polaris-foundation/polaris-async-adapter:latest
+            docker tag polaris-async-adapter ghcr.io/polaris-foundation/polaris-async-adapter:cb-${CIRCLE_BUILD_NUM}
+            docker tag polaris-async-adapter ghcr.io/polaris-foundation/polaris-async-adapter:$(git log --pretty=format:'%h' -n 1)
       - run:
-          name: Deploy to Azure dev environment
-          command: .circleci/deploy_azure_dev.sh
-      - ms-teams/report:
-          only_on_fail: true
-          webhook_url: ${MSTEAMS_NOTIFY_WEBHOOK_URL}
+          name: Authenticate to GHCR
+          command: echo $GHCR_TOKEN | docker login ghcr.io -u jonadaly --password-stdin
+      - run:
+          name: Push docker image
+          command: |
+            docker push ghcr.io/polaris-foundation/polaris-async-adapter:latest
+            docker push ghcr.io/polaris-foundation/polaris-async-adapter:cb-${CIRCLE_BUILD_NUM}
+            docker push ghcr.io/polaris-foundation/polaris-async-adapter:$(git log --pretty=format:'%h' -n 1)
 workflows:
   version: 2
   build_test_deploy:
     jobs:
       - test:
-          context: engineering-build
+          context: polaris-foundation
       - integration-test:
-          context: engineering-build
+          context: polaris-foundation
       - deploy-dev:
-          context: dhos-deploy
+          context: polaris-foundation
           requires:
             - test
             - integration-test
           filters:
             branches:
               only:
-                - trunk
+                - main

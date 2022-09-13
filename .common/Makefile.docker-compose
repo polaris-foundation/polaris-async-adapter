@@ -1,5 +1,0 @@
-docker-run: ## Run service and dependencies with docker-compose
-	docker-compose up
-
-docker-stop: ## Stop running containers
-	docker-compose down
