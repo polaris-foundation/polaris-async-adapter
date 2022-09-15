@@ -25,10 +25,10 @@ class EncounterUpdateMessage(Schema):
     score_system = fields.String(required=False, allow_none=True)
     score_system_default_for_location = fields.String(required=True)
     spo2_scale = fields.Integer(required=False, allow_none=True)
-    admission_cancelled = fields.Boolean(required=False, default=False)
-    discharge_cancelled = fields.Boolean(required=False, default=False)
+    admission_cancelled = fields.Boolean(required=False, load_default=False)
+    discharge_cancelled = fields.Boolean(required=False, load_default=False)
     discharged_at = fields.String(required=False, allow_none=True)
-    patient_deceased = fields.Boolean(required=False, default=False)
+    patient_deceased = fields.Boolean(required=False, load_default=False)
     merge_patient_record_uuid = fields.String(required=False, allow_none=True)
 
 

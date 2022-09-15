@@ -33,3 +33,28 @@ safety = "*"
 tox = "*"
 types-mock = "*"
 types-requests = "*"
+
+[tool.mypy]
+namespace_packages=true
+ignore_missing_imports=false
+disallow_untyped_defs=true
+
+[[tool.mypy.overrides]]
+module = [
+    "environs",
+    "pytest",
+    "kombu.*",
+    "requests_mock",
+    "pytest_mock",
+    "jose",
+    "_pytest.*"
+]
+ignore_missing_imports = true
+
+[tool.isort]
+profile = "black"
+known_third_party = ["_pytest", "behave", "clients", "draymed", "environs", "helpers", "jose", "kombu", "kombu_batteries_included", "marshmallow", "mock", "pytest", "pytest_mock", "reporting", "reportportal_behave", "requests", "requests_mock", "she_logging"]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
