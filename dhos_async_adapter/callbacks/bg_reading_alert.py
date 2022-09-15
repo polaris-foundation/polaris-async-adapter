@@ -21,11 +21,13 @@ class AlertType(Enum):
 
 class BgReadingAlertMessage(Schema):
 
-    patient_uuid = fields.String(required=True, description="Patient UUID")
+    patient_uuid = fields.String(
+        required=True, metadata={"description": "Patient UUID"}
+    )
     alert_type = fields.String(
         required=True,
-        description="The alert type and system",
         validate=validate.OneOf([t.value for t in AlertType]),
+        metadata={"description": "The alert type and system"},
     )
 
 

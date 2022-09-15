@@ -13,13 +13,13 @@ ROUTING_KEY = "dhos.DM000017"
 class EmailNotificationRequest(Schema):
 
     email_address = fields.String(
-        required=True, description="Email address", example="john.roberts@mail.com"
+        required=True,
+        metadata={"description": "Email address", "example": "john.roberts@mail.com"},
     )
     email_type = fields.String(
         required=True,
-        description="Email type",
         validate=OneOf(["WELCOME_EMAIL"]),
-        example="WELCOME_EMAIL",
+        metadata={"description": "Email type", "example": "WELCOME_EMAIL"},
     )
 
 

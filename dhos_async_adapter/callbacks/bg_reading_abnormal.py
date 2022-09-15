@@ -10,7 +10,7 @@ ROUTING_KEY = "gdm.166922008"
 
 
 class AbnormalBgReadingMessage(Schema):
-    uuid = fields.String(required=True, description="BG Reading UUID")
+    uuid = fields.String(required=True, metadata={"description": "BG Reading UUID"})
 
 
 def process(body: AnyStr) -> None:
